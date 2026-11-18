@@ -1,0 +1,22 @@
+{
+  "category": "minimized",
+  "id": "generated-afe24c6fd035b0ec",
+  "input": "generated-afe24c6fd035b0ec.bin",
+  "oracle": "generated-afe24c6fd035b0ec.oracle.json",
+  "origin": "automatic-minimization",
+  "regression": {
+    "base_match_required": true,
+    "candidate_absence_and_oracle_required": true,
+    "signature": {
+      "error_type": "heap-buffer-overflow",
+      "key": "WRITE",
+      "location": "src/tlvparse.c:copy_value"
+    }
+  },
+  "sha256": "afe24c6fd035b0ecb77eb2ae08763eae97fba18a510947014958cf8a5f850af5",
+  "signature": {
+    "error_type": "heap-buffer-overflow",
+    "key": "WRITE",
+    "location": "src/tlvparse.c:copy_value"
+  }
+}

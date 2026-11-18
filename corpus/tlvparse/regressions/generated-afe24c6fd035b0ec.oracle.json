@@ -1,0 +1,16 @@
+{
+  "exit_code": 2,
+  "provenance": {
+    "independent": true,
+    "source": "oracles/tlvparse/SPEC.md#Security property"
+  },
+  "schema_version": "1.0",
+  "stderr": {
+    "base64": "ZXJyb3I6IHZhbHVlIHRvbyBsb25nCg==",
+    "mode": "exact"
+  },
+  "stdout": {
+    "base64": "",
+    "mode": "exact"
+  }
+}

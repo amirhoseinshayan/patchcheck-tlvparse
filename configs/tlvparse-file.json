@@ -1,0 +1,226 @@
+{
+  "schema_version": "1.0",
+  "target": "tlvparse",
+  "fixture": false,
+  "source": {
+    "repo": "..",
+    "base": "main",
+    "candidate": "main"
+  },
+  "builds": {
+    "release": {
+      "compiler": "gcc",
+      "flags": [
+        "-Wall",
+        "-Wextra",
+        "-fstack-protector-strong",
+        "-fPIE",
+        "-pie",
+        "-Wl,-z,relro,-z,now",
+        "-D_FORTIFY_SOURCE=2",
+        "-O2"
+      ],
+      "command": [
+        "{compiler}",
+        "{flags}",
+        "src/tlvparse.c",
+        "-o",
+        "tlvparse"
+      ],
+      "binary": "tlvparse"
+    },
+    "sanitized": {
+      "compiler": "gcc",
+      "flags": [
+        "-Wall",
+        "-Wextra",
+        "-fstack-protector-strong",
+        "-fPIE",
+        "-pie",
+        "-Wl,-z,relro,-z,now",
+        "-O1",
+        "-g",
+        "-fno-omit-frame-pointer",
+        "-fsanitize=address,undefined"
+      ],
+      "command": [
+        "{compiler}",
+        "{flags}",
+        "src/tlvparse.c",
+        "-o",
+        "tlvparse"
+      ],
+      "binary": "tlvparse",
+      "instrumentation": [
+        "__asan_init"
+      ]
+    },
+    "coverage": {
+      "compiler": "gcc",
+      "flags": [
+        "-Wall",
+        "-Wextra",
+        "-O0",
+        "-g",
+        "--coverage"
+      ],
+      "command": [
+        "{compiler}",
+        "{flags}",
+        "src/tlvparse.c",
+        "-o",
+        "tlvparse"
+      ],
+      "binary": "tlvparse"
+    }
+  },
+  "input": {
+    "mode": "file",
+    "argv": [
+      "{binary}",
+      "{input}"
+    ],
+    "cwd": "."
+  },
+  "environment": {
+    "image": "patchcheck-framework:1.0",
+    "variables": {
+      "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1:symbolize=1",
+      "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+    }
+  },
+  "tools": {
+    "gcc": "gcc .*",
+    "g++": "g\\+\\+ .*",
+    "readelf": "GNU readelf .*",
+    "git": "git version .*",
+    "python3": "Python 3\\..*"
+  },
+  "limits": {
+    "wall_seconds": 3,
+    "cpu_seconds": 2,
+    "memory_mb": 384,
+    "pids": 32,
+    "output_bytes": 1048576,
+    "file_bytes": 16777216,
+    "build_wall_seconds": 90
+  },
+  "tests": [
+    {
+      "id": "valid-basic",
+      "category": "valid",
+      "input": "../corpus/tlvparse/inputs/valid-basic.bin",
+      "oracle": "../oracles/tlvparse/valid-basic.json",
+      "signature": null
+    },
+    {
+      "id": "valid-empty",
+      "category": "valid",
+      "input": "../corpus/tlvparse/inputs/valid-empty.bin",
+      "oracle": "../oracles/tlvparse/valid-empty.json",
+      "signature": null
+    },
+    {
+      "id": "valid-negative",
+      "category": "valid",
+      "input": "../corpus/tlvparse/inputs/valid-negative.bin",
+      "oracle": "../oracles/tlvparse/valid-negative.json",
+      "signature": null
+    },
+    {
+      "id": "boundary-name32",
+      "category": "boundary",
+      "input": "../corpus/tlvparse/inputs/boundary-name32.bin",
+      "oracle": "../oracles/tlvparse/boundary-name32.json",
+      "signature": null
+    },
+    {
+      "id": "boundary-blob32",
+      "category": "boundary",
+      "input": "../corpus/tlvparse/inputs/boundary-blob32.bin",
+      "oracle": "../oracles/tlvparse/boundary-blob32.json",
+      "signature": null
+    },
+    {
+      "id": "boundary-16records",
+      "category": "boundary",
+      "input": "../corpus/tlvparse/inputs/boundary-16records.bin",
+      "oracle": "../oracles/tlvparse/boundary-16records.json",
+      "signature": null
+    },
+    {
+      "id": "invalid-magic",
+      "category": "invalid",
+      "input": "../corpus/tlvparse/inputs/invalid-magic.bin",
+      "oracle": "../oracles/tlvparse/invalid-magic.json",
+      "signature": null
+    },
+    {
+      "id": "invalid-truncated",
+      "category": "invalid",
+      "input": "../corpus/tlvparse/inputs/invalid-truncated.bin",
+      "oracle": "../oracles/tlvparse/invalid-truncated.json",
+      "signature": null
+    },
+    {
+      "id": "invalid-type",
+      "category": "invalid",
+      "input": "../corpus/tlvparse/inputs/invalid-type.bin",
+      "oracle": "../oracles/tlvparse/invalid-type.json",
+      "signature": null
+    },
+    {
+      "id": "invalid-numlen",
+      "category": "invalid",
+      "input": "../corpus/tlvparse/inputs/invalid-numlen.bin",
+      "oracle": "../oracles/tlvparse/invalid-numlen.json",
+      "signature": null
+    },
+    {
+      "id": "invalid-17records",
+      "category": "invalid",
+      "input": "../corpus/tlvparse/inputs/invalid-17records.bin",
+      "oracle": "../oracles/tlvparse/invalid-17records.json",
+      "signature": null
+    },
+    {
+      "id": "poc-long-name",
+      "category": "original",
+      "input": "../corpus/tlvparse/inputs/poc-long-name.bin",
+      "oracle": "../oracles/tlvparse/poc-long-name.json",
+      "signature": {
+        "error_type": "heap-buffer-overflow",
+        "location": "src/tlvparse.c:copy_value",
+        "key": "WRITE"
+      }
+    },
+    {
+      "id": "poc-long-blob",
+      "category": "original",
+      "input": "../corpus/tlvparse/inputs/poc-long-blob.bin",
+      "oracle": "../oracles/tlvparse/poc-long-blob.json",
+      "signature": {
+        "error_type": "heap-buffer-overflow",
+        "location": "src/tlvparse.c:copy_value",
+        "key": "WRITE"
+      }
+    },
+    {
+      "id": "poc-blob-new",
+      "category": "original",
+      "input": "../corpus/tlvparse/inputs/poc-blob-new.bin",
+      "oracle": "../oracles/tlvparse/poc-blob-new.json",
+      "signature": {
+        "error_type": "heap-buffer-overflow",
+        "location": "src/tlvparse.c:load_blob",
+        "key": "WRITE"
+      }
+    }
+  ],
+  "corpus_dir": "../corpus/tlvparse/regressions",
+  "analyzers": [],
+  "minimization": {
+    "max_attempts": 300,
+    "wall_seconds": 900
+  }
+}

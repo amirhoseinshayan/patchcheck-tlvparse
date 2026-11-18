@@ -1,0 +1,63 @@
+name: Patchcheck — patch acceptance
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch base and head commits
+        run: git fetch --depth 1 origin "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Patchcheck (pinned)
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/amirhoseinshayan/patchcheck.git /tmp/patchcheck
+          cd /tmp/patchcheck
+          git fetch --depth 1 origin c74f938db386c85a8adbbc7ad2364b1193c7d2ce && git checkout c74f938db386c85a8adbbc7ad2364b1193c7d2ce
+          git sparse-checkout set --no-cone /src/ /vendor/ /ci/ /environment/ /schemas/ /pyproject.toml /requirements.lock
+          python -m venv "$GITHUB_WORKSPACE/.venv"
+          "$GITHUB_WORKSPACE/.venv/bin/python" ci/bootstrap.py
+      - name: Build frozen Linux x86_64 toolchain
+        run: docker build --platform linux/amd64 -t patchcheck-framework:1.0 -f /tmp/patchcheck/environment/Dockerfile /tmp/patchcheck
+      - name: Evaluate base vs PR head
+        id: eval
+        run: |
+          set +e
+          .venv/bin/patchcheck run configs/tlvparse-file.json --base "${{ github.event.pull_request.base.sha }}" --candidate "${{ github.event.pull_request.head.sha }}" --out artifacts/result
+          echo "actual=$?" >> "$GITHUB_OUTPUT"
+      - name: Gate — accept only a complete valid run with verdict 0
+        id: gate
+        run: |
+          REPORT=artifacts/result/report.json
+          ACTUAL="${{ steps.eval.outputs.actual }}"
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::missing report.json (infrastructure or evaluation failure)"
+            exit 1
+          fi
+          REPORTED=$(python3 -c "import json;print(json.load(open('$REPORT'))['exit_code'])" 2>/dev/null || echo INVALID)
+          case "$ACTUAL" in 0|10|20|30|40) ;; *) echo "::error::unknown patchcheck exit code: $ACTUAL"; exit 1;; esac
+          if [ "$REPORTED" = "INVALID" ]; then echo "::error::corrupt report.json"; exit 1; fi
+          if [ "$REPORTED" != "$ACTUAL" ]; then echo "::error::reported verdict $REPORTED != actual exit $ACTUAL"; exit 1; fi
+          case "$REPORTED" in
+            0) echo "::notice::VERDICT 0 - PASS: vulnerability fixed and functional preserved";;
+            10) echo "::error::VERDICT 10 - VULN_REMAINS/NEW_ISSUE: a confirmed security issue remains"; exit 10;;
+            20) echo "::error::VERDICT 20 - FUNC_REGRESSION: a valid input regressed"; exit 20;;
+            30) echo "::error::VERDICT 30 - BUILD_OR_CONFIG_ERROR"; exit 30;;
+            40) echo "::error::VERDICT 40 - INCONCLUSIVE (insufficient evidence / fixture)"; exit 40;;
+            *) echo "::error::unknown verdict $REPORTED"; exit 1;;
+          esac
+      - name: Upload evidence artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: patchcheck-result
+          path: artifacts/result/
+          if-no-files-found: warn
