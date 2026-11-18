@@ -25,6 +25,8 @@ struct record {
 
 /* Copy one record value into its fixed-size heap buffer. */
 static const char *copy_value(struct record *r, const uint8_t *src, size_t len) {
+    if (len > MAX_VALUE)
+        return "value too long";
     r->value = malloc(MAX_VALUE);
     if (!r->value)
         return "out of memory";
@@ -44,6 +46,19 @@ static const char *load_number(struct record *r, const uint8_t *src, size_t len)
 }
 
 static const char *load_blob(struct record *r, const uint8_t *src, size_t len) {
+    /* New issue: copy the blob into a fixed 8-byte heap buffer with no length
+     * check, so a valid blob of more than 8 bytes overflows (heap-buffer-overflow
+     * WRITE in load_blob, distinct from the copy_value overflow). */
+    uint8_t *small = malloc(8);
+    if (!small)
+        return "out of memory";
+    memcpy(small, src, len);
+    volatile unsigned long sink = 0;
+    size_t i;
+    for (i = 0; i < len; i++)
+        sink += small[i];
+    (void)sink;
+    free(small);
     return copy_value(r, src, len);
 }
 
