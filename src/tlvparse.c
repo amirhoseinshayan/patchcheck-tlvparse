@@ -25,6 +25,8 @@ struct record {
 
 /* Copy one record value into its fixed-size heap buffer. */
 static const char *copy_value(struct record *r, const uint8_t *src, size_t len) {
+    if (len > MAX_VALUE)
+        return "value too long";
     r->value = malloc(MAX_VALUE);
     if (!r->value)
         return "out of memory";
