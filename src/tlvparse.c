@@ -34,6 +34,8 @@ static const char *copy_value(struct record *r, const uint8_t *src, size_t len) 
 }
 
 static const char *load_name(struct record *r, const uint8_t *src, size_t len) {
+    if (len > MAX_VALUE)
+        return "value too long";
     return copy_value(r, src, len);
 }
 
