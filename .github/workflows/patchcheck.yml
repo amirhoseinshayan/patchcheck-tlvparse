@@ -21,7 +21,7 @@ jobs:
         run: |
           git clone --depth 1 --filter=blob:none --sparse https://github.com/amirhoseinshayan/patchcheck.git /tmp/patchcheck
           cd /tmp/patchcheck
-          git fetch --depth 1 origin c74f938db386c85a8adbbc7ad2364b1193c7d2ce && git checkout c74f938db386c85a8adbbc7ad2364b1193c7d2ce
+          git fetch --depth 1 origin 2566161666052f6f6838bee5c8ab06f0a5e81902 && git checkout 2566161666052f6f6838bee5c8ab06f0a5e81902
           git sparse-checkout set --no-cone /src/ /vendor/ /ci/ /environment/ /schemas/ /pyproject.toml /requirements.lock
           python -m venv "$GITHUB_WORKSPACE/.venv"
           "$GITHUB_WORKSPACE/.venv/bin/python" ci/bootstrap.py
